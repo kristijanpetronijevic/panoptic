@@ -11,7 +11,6 @@ def set_seed(seed):
     np.random.seed(seed)
     random.seed(seed)
     torch.manual_seed(seed)
-    A.seed(seed)
     
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
@@ -100,17 +99,17 @@ def split_coco_dataset(coco_data, train_ratio=0.9):
     return train_data, val_data
 
 def save_model(model, optimizer, val_losses, train_losses, lr, epoch, batch_size, model_architecture, path, train_dataset_size, val_dataset_size, map_values_bbox,
-                 model_name, seed=None, optimizer_hyperparameters=None):
+                 model_name, backbone, seed=None, optimizer_hyperparameters=None, mention = None):
                     
                     
     save_metadata(map_values_bbox, val_losses, train_losses, lr, epoch, batch_size, model_architecture, path,
-                    train_dataset_size, val_dataset_size, model_name, seed, optimizer_hyperparameters)
+                    train_dataset_size, val_dataset_size, model_name, backbone, seed, optimizer_hyperparameters, mention=mention)
     
     save_model_weights(model, optimizer, path, model_name)
     
 
-def save_metadata(map_values_bbox, map_values_mask, val_losses, train_losses, lr, epoch, batch_size, model_architecture, 
-                    path, train_dataset_size, val_dataset_size, model_name, seed=None, optimizer_hyperparameters=None):
+def save_metadata(map_values_bbox, val_losses, train_losses, lr, epoch, batch_size, model_architecture, 
+                    path, train_dataset_size, val_dataset_size, model_name, backbone, seed=None, optimizer_hyperparameters=None, mention = None):
                         
     # Pripremamo dictionary sa svim metapodacima
     metadata = {
@@ -124,13 +123,15 @@ def save_metadata(map_values_bbox, map_values_mask, val_losses, train_losses, lr
         'train_dataset_size': train_dataset_size,
         'val_dataset_size': val_dataset_size,
         'random_seed': seed,
-        'optimizer_hyperparameters': optimizer_hyperparameters
+        'optimizer_hyperparameters': optimizer_hyperparameters,
+        'backbone': backbone,
+        'mention':mention
     }
     
     # Sačuvaj metapodatke u JSON formatu
     with open(f"{path + model_name}.json", 'w') as json_file:
         json.dump(metadata, json_file, indent=4)
-    print(f"Metapodaci sačuvani u: {path}.json")
+    print(f"Metapodaci sačuvani u: {path + model_name}.json")
     
     
 def save_model_weights(model, optimizer, path, model_name):
@@ -138,7 +139,24 @@ def save_model_weights(model, optimizer, path, model_name):
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict()
     }
-    torch.save(model_weights, f"{path}.pth")
+    torch.save(model_weights, f"{path + model_name}.pth")
     print(f"Model i optimizer sačuvani u: {path + model_name}.pth")
     
+def load_model_weights(model, path, model_name):
+    checkpoint = torch.load(f"{path + model_name}.pth")
     
+    # Učitajte samo stanje modela
+    model.load_state_dict(checkpoint['model_state_dict'])
+    
+    print(f"Model učitan iz: {path + model_name}.pth")
+    return model
+
+
+def load_model_weights_and_optimizer(model, optimizer, path, model_name):
+    checkpoint = torch.load(f"{path + model_name}.pth")
+    
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    
+    print(f"Model i optimizer učitani iz: {path + model_name}.pth")
+    return model, optimizer
