@@ -14,3 +14,5 @@ Ivan Pop-Jovanov
 ## Autori:
 - Marko Nikitović 123/2020  
 - Kristijan Petronijević 357/2022
+
+Podaci preuzeti sa sledećeg linka: https://www.kaggle.com/datasets/quantigoai/soccer-dataset
