@@ -9,9 +9,23 @@ import matplotlib.patches as patches
 import albumentations as A
 import json
 import torch
+import torchvision.transforms as T
+
 
 class DatasetAugs(torch.utils.data.Dataset):
-    def __init__(self, root, annotation_files, transforms=None, size_factor = 1, resize_pair = None):
+    """
+    PyTorch dataset koji radi sa COCO anotacijama i omogućava čitanje i augmentaciju slika, maski, i bounding box-ova za instance segmentation zadatke. 
+    
+    Args:
+        root (str): Putanja do direktorijuma gde se nalaze slike.
+        annotation_files (list of str): Lista putanja do COCO JSON fajlova sa anotacijama.
+        transforms (list, optional): Lista transformacija koje će se primeniti na slike i maske. Default je None.
+        size_factor (int, optional): Faktor za uvećanje skupa podataka, koristi se za oversampling. Default je 1.
+        resize_pair (tuple, optional): Par (height, width) za promenu veličine slike i maski. Default je None.
+        train (bool, optional): Zastavica da li je dataset za treniranje ili evaluaciju (False za evaluaciju). Default je True.
+    """
+        
+    def __init__(self, root, annotation_files, transforms=None, size_factor = 1, resize_pair = None, train = True):
         self.root = root
         self.transforms = transforms
         self.coco_datasets = [COCO(annotation_file) for annotation_file in annotation_files]
@@ -21,6 +35,7 @@ class DatasetAugs(torch.utils.data.Dataset):
         self.img_ids = list(set(self.img_ids))
         self.size_factor = size_factor
         self.resize_pair = resize_pair
+        self.train = train
 
     def __getitem__(self, idx):
         img_id = self.img_ids[idx % len(self.img_ids)]
@@ -71,7 +86,8 @@ class DatasetAugs(torch.utils.data.Dataset):
             boxes = augmented['bboxes']
 
         #img = torch.from_numpy(np.array(img).transpose(2, 0, 1)).float() / 255.0 # Convert to tensor, channels first
-
+        if self.train:
+            img = T.ToTensor()(img)
 
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
         labels = torch.as_tensor(labels, dtype=torch.int64)
