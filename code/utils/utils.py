@@ -302,3 +302,17 @@ def visualize_metrics(mAP, categories):
     else:
         print("Nema dostupnih metrika po klasama.")
 
+def get_image_ids(annotation_file):
+    """Funkcija koja iz JSON fajla izvuče sve image_id vrednosti."""
+    with open(annotation_file, 'r') as file:
+        data = json.load(file)
+        image_ids = {image['id'] for image in data['images']}
+    return image_ids
+
+def find_common_image_ids(file1, file2):
+    """Funkcija koja vraća presek image_id između dva anotaciona fajla."""
+    image_ids_file1 = get_image_ids(file1)
+    image_ids_file2 = get_image_ids(file2)
+
+    common_image_ids = image_ids_file1.intersection(image_ids_file2)
+    return common_image_ids
